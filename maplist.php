@@ -9,7 +9,7 @@ error_reporting(E_ALL ^ E_NOTICE);
 define('TEMPLATE_GET_KEY', 1);
 define('TEMPLATE_GET_VALUE', 2);
 define('WIKIURL', 'https://fwwiki.de');
-define("BERGFELD", 'http://welt1.freewar.de/freewar/images/map/std.jpg');
+define("BERGFELD", 'https://welt1.freewar.de/freewar/images/map/std.jpg');
 
 function is_obsolete($wiki_text)
 {

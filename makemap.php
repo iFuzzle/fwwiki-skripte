@@ -1,9 +1,9 @@
 <?php
 header('Content-Type: text/plain; charset=utf-8;');
 
-const BERGFELD = 'http://welt1.freewar.de/freewar/images/map/std.jpg';
+const BERGFELD = 'https://welt1.freewar.de/freewar/images/map/std.jpg';
 const ATLAS_TEMPLATE = 'atlas-vorlage.odt';
-const GESAMTKARTE_LORU = array(2, 2, 170, 400); 
+const GESAMTKARTE_LORU = array(2, 2, 270, 400); 
 const MAPLIST = 'maplist.txt';
 const MAPCACHE = './map_cache';
 
@@ -246,8 +246,17 @@ $count = 10000;
 // cacht mapfile
 function cache_mapfile($url) {
     $cache_file = MAPCACHE . "/". md5($url);
-    if (!file_exists($cache_file)) {
-        file_put_contents($cache_file, file_get_contents($url));
+    if (!file_exists($cache_file) || filesize($cache_file) == 0) {
+        $url = preg_replace('#^http://#', 'https://', $url);
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_FOLLOWLOCATION => true, CURLOPT_FAILONERROR => true, CURLOPT_TIMEOUT => 30]);
+        $data = curl_exec($ch);
+        curl_close($ch);
+        if ($data === false || $data === '') {
+            echo "Fehler beim Laden von $url\n";
+            exit(1);
+        }
+        file_put_contents($cache_file, $data);
     }
     
     return $cache_file;
