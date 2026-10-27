@@ -3,7 +3,7 @@ header('Content-Type: text/plain; charset=utf-8;');
 
 const BERGFELD = 'https://welt1.freewar.de/freewar/images/map/std.jpg';
 const ATLAS_TEMPLATE = 'atlas-vorlage.odt';
-const GESAMTKARTE_LORU = array(2, 2, 270, 400); 
+const GESAMTKARTE_LORU = array(10, 10, 170, 400); 
 const MAPLIST = 'maplist.txt';
 const MAPCACHE = './map_cache';
 
@@ -290,7 +290,14 @@ foreach ($field_rows as $field) {
     $g = array_key_exists(0, $field) ? $field[0] : NULL;
     $b = array_key_exists(1, $field) ? $field[1] : NULL;
 
+    $g_orig = $g;
+
     if ($o["mode"] == "gesamt") {
+
+        // Zustandsvarianten (z.B. "Elufia (Eis)", "Pensal (brennend)") liegen
+        // auf denselben Koordinaten wie das Grundgebiet und würden es sonst
+        // überdecken
+        if (preg_match('/ \((Eis|Feuer|brennend)\)$/', $g_orig)) continue;
 
         // Für die Gesamtkarte werden die Felder des Kontinents als ein Gebiet
         // behandelt
@@ -327,13 +334,20 @@ foreach ($field_rows as $field) {
         if ($y < $lim["miny"]) $lim["miny"] = $y;
         if ($x > $lim["maxx"]) $lim["maxx"] = $x;
         if ($y > $lim["maxy"]) $lim["maxy"] = $y;
+    } else if ($o["mode"] == "gesamt") {
+        // Gesamtkarte: rechte und untere Kante schliessen die unbetretbaren
+        // Rahmenfelder ein, sonst werden die Inseln im Süden abgeschnitten.
+        // Linke und obere Kante bleiben beim begehbaren Bereich, da
+        // Vorlage:KartenMetaDaten (TopLeftX/Y) darauf aufbaut.
+        if ($x > $lim["maxx"]) $lim["maxx"] = $x;
+        if ($y > $lim["maxy"]) $lim["maxy"] = $y;
     }
         
     // und gleich bilddatein holen
     $cache_file = cache_mapfile(array_key_exists(5, $field) ? $field[5] : NULL);
     
     // kein Feldtitel oder `Feldtitel Pensal (brennend)`
-    if (!isset($g) || strpos($g, ' (brennend)') === false) {
+    if (!isset($g_orig) || strpos($g_orig, ' (brennend)') === false) {
         $fields["{$x}$pos_delimiter{$y}"] = [
             'x' => $x,
             'y' => $y,
