@@ -1,0 +1,10 @@
+.git
+.github
+map_cache
+ausgabe
+map.png
+maplist.txt
+maplist.log
+Dockerfile
+.dockerignore
+README.md

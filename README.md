@@ -55,3 +55,42 @@ Tage, weltenuebergreifend) beeinflusst die Karte damit nicht.
   Hotspots, Fadenkreuze und Inselversaetze im Wiki bleiben gueltig.
 * Bilder werden per cURL ueber HTTPS geladen. Schlaegt ein Download fehl,
   bricht das Skript ab, statt eine leere Cache-Datei anzulegen.
+
+## Docker
+
+Das Image enthaelt PHP 8.3 (gd, zip, curl), ImageMagick und die DejaVu-Schrift
+sowie die drei Skripte. Der Standardbefehl fuehrt `gesamtkarte.sh` aus. Das
+Image wird bei jedem Push auf `main` (und auf den Arbeitsbranch) per GitHub
+Actions gebaut und nach `ghcr.io/ifuzzle/fwwiki-skripte` veroeffentlicht
+(Tags: `latest` fuer main, Branchname, `vX.Y.Z` bei Git-Tags `v*`, Commit-SHA).
+
+```
+docker pull ghcr.io/ifuzzle/fwwiki-skripte:latest
+mkdir -p map_cache ausgabe
+docker run --rm \
+  -v ./map_cache:/app/map_cache \
+  -v ./ausgabe:/app/ausgabe \
+  ghcr.io/ifuzzle/fwwiki-skripte:latest
+```
+
+* `map_cache/` (Feldbild-Cache) muss gemountet werden, sonst dauert jeder
+  Lauf ca. 20 Min. Nur der erste Lauf mit leerem Cache ist so langsam.
+* `ausgabe/` enthaelt danach `Gesamtkarte Kontinent (automatisch generiert).jpg`.
+  Das Bild wird von Hand ins Wiki hochgeladen.
+* Der Container laeuft als root; bei gemounteten Verzeichnissen gehoeren die
+  Dateien daher root. `--user "$(id -u):$(id -g)"` geht nur, wenn die
+  Verzeichnisse dem Nutzer gehoeren und `/app` beschreibbar ist (nicht
+  getestet).
+* Lokal bauen: `docker build -t fwwiki-skripte .`
+
+Regelmaessig ausfuehren, z. B. per cron alle 3 Tage um 4 Uhr:
+
+```
+0 4 */3 * * cd /pfad/zu/karte && docker pull -q ghcr.io/ifuzzle/fwwiki-skripte:latest && docker run --rm -v ./map_cache:/app/map_cache -v ./ausgabe:/app/ausgabe ghcr.io/ifuzzle/fwwiki-skripte:latest
+```
+
+Hinweis: Neue Packages auf ghcr.io sind zunaechst privat. Fuer `docker pull`
+ohne Anmeldung nach dem ersten erfolgreichen Build unter GitHub ->
+Profil/Organisation -> Packages -> `fwwiki-skripte` -> Package settings ->
+Change visibility auf "Public" stellen (oder mit `docker login ghcr.io` und
+einem Token mit `read:packages` anmelden).
